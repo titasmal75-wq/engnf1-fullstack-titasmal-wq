@@ -1,5 +1,5 @@
 
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const resourceSchema = new mongoose.Schema(
   {
@@ -7,15 +7,13 @@ const resourceSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 100,
     },
 
     type: {
       type: String,
-      enum: ["ROOM",   "LAB", "EQUIPMENT"],
+      enum: ["ROOM", "LAB", "EQUIPMENT"],
       required: true,
     },
-
 
     capacity: {
       type: Number,
@@ -23,27 +21,30 @@ const resourceSchema = new mongoose.Schema(
       min: 1,
     },
 
-
     description: {
       type: String,
+      default: null,
       trim: true,
-      maxlength: 500,
-      default: "",
     },
 
-    
     isActive: {
       type: Boolean,
       default: true,
     },
   },
   {
-    timestamps: true,
+    timestamps: { createdAt: true, updatedAt: false },
   }
 );
 
-resourceSchema.index({ type: 1, isActive: 1 });
 
+resourceSchema.index(
+  { name: 1 },
+  {
+    unique: true,
+    collation: { locale: "en", strength: 2 },
+  }
+);
 
 
 

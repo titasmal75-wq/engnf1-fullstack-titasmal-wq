@@ -1,5 +1,5 @@
 
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const ticketEventSchema = new mongoose.Schema(
   {
@@ -17,12 +17,11 @@ const ticketEventSchema = new mongoose.Schema(
         "priority",
         "status",
         "assigneeId",
-        "subject",
-        "body",
       ],
       required: true,
     },
 
+   
     oldValue: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
@@ -35,16 +34,20 @@ const ticketEventSchema = new mongoose.Schema(
 
     
     actor: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
+      type: String,
+      required: true,
+      trim: true,
     },
   },
   {
-    timestamps: true,
+    timestamps: { createdAt: true, updatedAt: false },
   }
 );
 
-ticketEventSchema.index({ ticketId: 1, createdAt: -1 });
+ticketEventSchema.index({
+  ticketId: 1,
+  createdAt: -1,
+});
 
 module.exports = mongoose.model("TicketEvent" , ticketEventSchema);
+

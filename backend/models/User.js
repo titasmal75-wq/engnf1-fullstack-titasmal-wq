@@ -1,5 +1,5 @@
 
-import mongoose, { model } from "mongoose";
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
@@ -7,23 +7,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      minlength: 1,
-      maxlength: 80,
     },
 
     email: {
       type: String,
       required: true,
-      unique: true,
-      lowercase: true,
       trim: true,
-      maxlength: 254,
     },
 
     passwordHash: {
       type: String,
       required: true,
-      select: false,
+      select: false, 
     },
 
     role: {
@@ -34,7 +29,15 @@ const userSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true,
+    timestamps: { createdAt: true, updatedAt: false },
+  }
+);
+
+userSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    collation: { locale: "en", strength: 2 },
   }
 );
 
