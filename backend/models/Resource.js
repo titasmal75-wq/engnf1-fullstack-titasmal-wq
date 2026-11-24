@@ -39,6 +39,11 @@ const resourceSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    bookingLockVersion: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
