@@ -7,6 +7,8 @@ const resourceSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      minlength: 3,
+      maxlength: 60,
     },
 
     type: {
@@ -19,12 +21,18 @@ const resourceSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 1,
+      max: 500,
+      validate: {
+        validator: Number.isInteger,
+        message: "Capacity must be an integer between 1 and 500",
+      },
     },
 
     description: {
       type: String,
       default: null,
       trim: true,
+      maxlength: 300,
     },
 
     isActive: {
@@ -33,7 +41,7 @@ const resourceSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: { createdAt: true, updatedAt: false },
+    timestamps: true,
   }
 );
 

@@ -9,6 +9,7 @@ const authRouter = require("./router/authRouter");
 const adminRouter = require("./router/adminRouter");
 const ticketRoutes = require("./router/ticketRoutes");
 const statsRoutes = require("./router/statsRoutes");
+const resourceRoutes = require("./router/resourceRoutes");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/resources", resourceRoutes);
 
 
 app.use((err, req, res, next) => {

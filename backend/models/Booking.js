@@ -36,9 +36,42 @@ const bookingSchema = new mongoose.Schema(
         message: "endTime must be after startTime",
       },
     },
+
+    purpose: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 5,
+      maxlength: 200,
+    },
+
+    status: {
+      type: String,
+      enum: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
+      default: "PENDING",
+      required: true,
+    },
+
+    rejectionNote: {
+      type: String,
+      default: null,
+      trim: true,
+      validate: {
+        validator: function (value) {
+          if (this.status === "REJECTED") {
+            return typeof value === "string" && value.trim().length >= 5 && value.trim().length <= 200;
+          }
+          if (value !== null && value !== undefined && value !== "") {
+            return typeof value === "string" && value.trim().length >= 5 && value.trim().length <= 200;
+          }
+          return true;
+        },
+        message: "Rejection note is required on reject, and must be 5 to 200 chars trimmed",
+      },
+    },
   },
   {
-    timestamps: { createdAt: true, updatedAt: false },
+    timestamps: true,
   }
 );
 
@@ -49,5 +82,7 @@ bookingSchema.index({
 });
 
 bookingSchema.index({ userId: 1 });
+bookingSchema.index({ status: 1 });
 
 module.exports = mongoose.model("Booking", bookingSchema);
+
