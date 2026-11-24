@@ -4,10 +4,11 @@ import { ProtectedRoute, GuestRoute } from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
+import StatsPage from "./pages/StatsPage";
 
 export default function App() {
     return (
-
+        <BrowserRouter>
         <AuthProvider>
             <Routes>
 
@@ -22,13 +23,15 @@ export default function App() {
 
                 <Route element={<ProtectedRoute />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/stats" element={<StatsPage />} />
                 </Route>
 
 
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
         </AuthProvider>
-
+        </BrowserRouter>
     );
 }
+
 

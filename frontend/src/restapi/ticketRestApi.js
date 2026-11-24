@@ -24,11 +24,18 @@ export const updateTicket = async (id, updates, agentHeader) => {
     return response.data;
 };
 
+export const getStats = async () => {
+    const response = await api.get("/stats");
+    return response.data;
+};
+
 const ticketRestApi = {
     importTickets,
     getTickets,
     getTicketById,
     updateTicket,
+    getStats,
 };
 
 export default ticketRestApi;
+

@@ -195,6 +195,9 @@ export default function DashboardPage() {
                     <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
                         📥 Import Tickets
                     </button>
+                    <button className="btn-secondary" onClick={() => navigate("/stats")}>
+                        📊 Stats
+                    </button>
                     <button className="logout-btn" onClick={handleLogout}>
                         Log out
                     </button>
