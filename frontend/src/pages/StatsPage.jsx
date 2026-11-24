@@ -45,7 +45,10 @@ export default function StatsPage() {
                 </div>
                 <div className="header-right">
                     <button className="btn-secondary" onClick={() => navigate("/dashboard")}>
-                        ← Dashboard
+                        🎫 Tickets
+                    </button>
+                    <button className="btn-secondary" onClick={() => navigate("/resources")}>
+                        🏢 Resources
                     </button>
                     <div className="user-mini-badge">
                         <span className="avatar-mini">{user?.name?.charAt(0).toUpperCase()}</span>

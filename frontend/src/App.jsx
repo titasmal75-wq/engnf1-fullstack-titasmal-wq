@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import StatsPage from "./pages/StatsPage";
+import ResourcesPage from "./pages/ResourcesPage";
 
 export default function App() {
     return (
@@ -24,6 +25,7 @@ export default function App() {
                 <Route element={<ProtectedRoute />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/stats" element={<StatsPage />} />
+                    <Route path="/resources" element={<ResourcesPage />} />
                 </Route>
 
 
