@@ -1,5 +1,5 @@
 
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const bookingSchema = new mongoose.Schema(
   {
@@ -50,6 +50,4 @@ bookingSchema.index({
 
 bookingSchema.index({ userId: 1 });
 
-
-
-module.exports = mongoose.model("Booking" , bookingSchema);
+module.exports = mongoose.model("Booking", bookingSchema);

@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
     passwordHash: {
       type: String,
       required: true,
-      select: false, 
+      select: false,
     },
 
     role: {
@@ -26,6 +26,17 @@ const userSchema = new mongoose.Schema(
       enum: ["USER", "ADMIN"],
       default: "USER",
       required: true,
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    refreshTokenHash: {
+      type: String,
+      default: null,
+      select: false,
     },
   },
   {
@@ -41,4 +52,4 @@ userSchema.index(
   }
 );
 
-module.exports = mongoose.model("User" , userSchema);
+module.exports = mongoose.model("User", userSchema);
