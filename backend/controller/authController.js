@@ -8,7 +8,7 @@ const {
 } = require("../utils/authGenerateToken");
 
 
-// ─── REGISTER ────────────────────────────────────────────────────────────────
+
 const register = async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -59,7 +59,7 @@ const register = async (req, res) => {
 };
 
 
-// ─── LOGIN ───────────────────────────────────────────────────────────────────
+
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -90,11 +90,11 @@ const login = async (req, res) => {
         const accessToken = generateAccessToken(user._id);
         const refreshToken = generateRefreshToken(user._id);
 
-        // Store hashed refresh token
+
         user.refreshTokenHash = hashToken(refreshToken);
         await user.save();
 
-        // Send refresh token as httpOnly cookie
+
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
         return res.status(200).json({
@@ -115,7 +115,7 @@ const login = async (req, res) => {
 };
 
 
-// ─── REFRESH ACCESS TOKEN ─────────────────────────────────────────────────────
+
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
@@ -157,7 +157,7 @@ const refreshAccessToken = async (req, res) => {
                 .json({ success: false, message: "Refresh token reuse detected" });
         }
 
-        // Rotate refresh token
+
         const newAccessToken = generateAccessToken(user._id);
         const newRefreshToken = generateRefreshToken(user._id);
 
@@ -177,7 +177,7 @@ const refreshAccessToken = async (req, res) => {
 };
 
 
-// ─── LOGOUT ──────────────────────────────────────────────────────────────────
+
 const logout = async (req, res) => {
     try {
         const token = req.cookies?.refreshToken;
@@ -192,7 +192,7 @@ const logout = async (req, res) => {
                     await user.save();
                 }
             } catch {
-                // Token already invalid — still clear the cookie
+
             }
         }
 
@@ -210,7 +210,7 @@ const logout = async (req, res) => {
 };
 
 
-// ─── GET ME ───────────────────────────────────────────────────────────────────
+
 const getMe = async (req, res) => {
     try {
         const user = await User.findById(req.user.id);

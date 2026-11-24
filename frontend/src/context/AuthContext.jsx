@@ -7,7 +7,6 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Restore session on mount
     useEffect(() => {
         let isMounted = true;
         const token = localStorage.getItem("accessToken");
@@ -49,7 +48,7 @@ export const AuthProvider = ({ children }) => {
         try {
             await authRestApi.logout();
         } catch {
-            // ignore network errors on logout
+
         }
         localStorage.removeItem("accessToken");
         setUser(null);

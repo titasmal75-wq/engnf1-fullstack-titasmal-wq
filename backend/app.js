@@ -7,10 +7,11 @@ const cookieParser = require("cookie-parser");
 const mongooseDB = require("./config/mongodbConnection");
 const authRouter = require("./router/authRouter");
 const adminRouter = require("./router/adminRouter");
+const ticketRoutes = require("./router/ticketRoutes");
 
 const app = express();
 
-// ─── Middleware ───────────────────────────────────────────────────────────────
+
 const allowedOrigins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -23,7 +24,7 @@ const allowedOrigins = [
 app.use(
     cors({
         origin: (origin, callback) => {
-            // Allow requests with no origin (like mobile apps, curl, postman)
+
             if (!origin) return callback(null, true);
             if (
                 allowedOrigins.includes(origin) ||
@@ -39,24 +40,24 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// ─── Database ─────────────────────────────────────────────────────────────────
+
 mongooseDB();
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
 app.get("/", (req, res) => {
     res.send("Express + MongoDB Connected!");
 });
 
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/tickets", ticketRoutes);
 
-// ─── Global Error Handler ─────────────────────────────────────────────────────
+
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ message: "Something went wrong", error: err.message });
 });
 
-// ─── Server ───────────────────────────────────────────────────────────────────
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}/`);

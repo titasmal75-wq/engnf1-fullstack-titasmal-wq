@@ -7,28 +7,28 @@ import DashboardPage from "./pages/DashboardPage";
 
 export default function App() {
     return (
-        <BrowserRouter>
-            <AuthProvider>
-                <Routes>
 
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <AuthProvider>
+            <Routes>
 
-
-                    <Route element={<GuestRoute />}>
-                        <Route path="/login" element={<LoginPage />} />
-                        <Route path="/register" element={<RegisterPage />} />
-                    </Route>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
 
-                    <Route element={<ProtectedRoute />}>
-                        <Route path="/dashboard" element={<DashboardPage />} />
-                    </Route>
+                <Route element={<GuestRoute />}>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                </Route>
 
 
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                </Routes>
-            </AuthProvider>
-        </BrowserRouter>
+                <Route element={<ProtectedRoute />}>
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                </Route>
+
+
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+        </AuthProvider>
+
     );
 }
 

@@ -1,12 +1,11 @@
 import axios from "axios";
 
-// In development, use Vite proxy `/api` when available, with fallback to direct backend URL
+
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
-    withCredentials: true, // send cookies (refresh token)
+    withCredentials: true,
 });
 
-// Attach access token to every outgoing request
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem("accessToken");
     if (token) {
@@ -15,7 +14,6 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Auto-refresh token handling on 401
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -32,7 +30,7 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Do not attempt token refresh for login, register, refresh, or already retried requests
+
         const isAuthEndpoint =
             originalRequest?.url?.includes("/auth/login") ||
             originalRequest?.url?.includes("/auth/register") ||
