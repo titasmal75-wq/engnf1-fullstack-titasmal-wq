@@ -103,6 +103,13 @@ jobs:
       - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'false'
+
+      - name: Mask ECR password in logs
+        env:
+          ECR_PASSWORD: ${{ steps.login-ecr.outputs.docker_password_535510333516_dkr_ecr_us_east_1_amazonaws_com }}
+        run: echo "::add-mask::$ECR_PASSWORD"
 
       # Step 3: Build multi-stage Docker image, tag with SHA and latest, then push to ECR
       - name: Build, Tag, and Push Image to Amazon ECR
@@ -128,18 +135,21 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_USERNAME: ${{ steps.login-ecr.outputs.docker_username_535510333516_dkr_ecr_us_east_1_amazonaws_com }}
+          ECR_PASSWORD: ${{ steps.login-ecr.outputs.docker_password_535510333516_dkr_ecr_us_east_1_amazonaws_com }}
           IMAGE_TAG: ${{ github.sha }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: ECR_REGISTRY,IMAGE_TAG
+          envs: ECR_REGISTRY,ECR_USERNAME,ECR_PASSWORD,IMAGE_TAG
           script: |
+            set -eu
             echo "=== 1. Authenticating EC2 Docker daemon with Amazon ECR ==="
-            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
+            printf '%s' "$ECR_PASSWORD" | docker login --username "$ECR_USERNAME" --password-stdin "$ECR_REGISTRY"
 
-            echo "=== 2. Pulling latest application image from ECR ==="
-            docker pull $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+            echo "=== 2. Pulling application image from ECR ==="
+            docker pull "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG"
 
             echo "=== 3. Stopping and removing old container (if exists) ==="
             docker stop ${{ env.CONTAINER_NAME }} || true
@@ -158,12 +168,16 @@ jobs:
               -e JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}" \
               -e ACCESS_TOKEN_EXPIRES="${{ secrets.ACCESS_TOKEN_EXPIRES || '15m' }}" \
               -e REFRESH_TOKEN_EXPIRES="${{ secrets.REFRESH_TOKEN_EXPIRES || '7d' }}" \
-              $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+              "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG"
 
             echo "=== 5. Cleaning up stale/dangling images ==="
             docker image prune -f
 
             echo "=== 6. Verifying container health on EC2 ==="
             sleep 4
+            if [ "$(docker inspect --format='{{.State.Running}}' ${{ env.CONTAINER_NAME }})" != "true" ]; then
+              docker logs ${{ env.CONTAINER_NAME }}
+              exit 1
+            fi
             docker ps --filter "name=${{ env.CONTAINER_NAME }}"
             echo "Deployment to AWS EC2 completed successfully!"
