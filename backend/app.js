@@ -14,8 +14,11 @@ const bookingRoutes = require("./router/bookingRoutes");
 const adminRoutes = require("./router/adminRoutes");
 
 
-const app = express();
+const path = require("path");
+const fs = require("fs");
 
+const app = express();
+const publicPath = path.join(__dirname, "public");
 
 const allowedOrigins = [
     "http://localhost:5173",
@@ -29,7 +32,6 @@ const allowedOrigins = [
 app.use(
     cors({
         origin: (origin, callback) => {
-
             if (!origin) return callback(null, true);
             if (
                 allowedOrigins.includes(origin) ||
@@ -45,12 +47,15 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-
 mongooseDB();
 
-app.get("/", (req, res) => {
-    res.send("Express + MongoDB Connected!");
-});
+if (fs.existsSync(publicPath)) {
+    app.use(express.static(publicPath));
+} else {
+    app.get("/", (req, res) => {
+        res.send("Express + MongoDB Connected!");
+    });
+}
 
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
@@ -59,6 +64,14 @@ app.use("/api/stats", statsRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/admin", adminRoutes);
+
+// SPA fallback for frontend routes in production
+if (fs.existsSync(publicPath)) {
+    app.get("*", (req, res, next) => {
+        if (req.path.startsWith("/api")) return next();
+        res.sendFile(path.join(publicPath, "index.html"));
+    });
+}
 
 
 app.use((err, req, res, next) => {
