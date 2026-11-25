@@ -50,6 +50,9 @@ export default function StatsPage() {
                     <button className="btn-secondary" onClick={() => navigate("/resources")}>
                         🏢 Resources
                     </button>
+                    <button className="btn-secondary" onClick={() => navigate("/bookings")}>
+                        📅 Bookings
+                    </button>
                     <div className="user-mini-badge">
                         <span className="avatar-mini">{user?.name?.charAt(0).toUpperCase()}</span>
                         <div className="user-mini-text">

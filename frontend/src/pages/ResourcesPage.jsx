@@ -245,6 +245,9 @@ export default function ResourcesPage() {
                     <button className="btn-secondary" onClick={() => navigate("/stats")}>
                         📊 Stats
                     </button>
+                    <button className="btn-secondary" onClick={() => navigate("/bookings")}>
+                        📅 Bookings
+                    </button>
                     <div className="user-mini-badge">
                         <span className="avatar-mini">{user?.name?.charAt(0).toUpperCase()}</span>
                         <div className="user-mini-text">

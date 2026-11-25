@@ -298,7 +298,7 @@ const cancelBooking = async (bookingId, userId) => {
         throw new BookingError("Booking not found", 404);
     }
 
-    // Owner check: only the booking owner can cancel (403)
+
     const ownerId = String(booking.userId?._id || booking.userId);
     const requesterId = String(userId?._id || userId?.id || userId);
 
@@ -306,7 +306,6 @@ const cancelBooking = async (bookingId, userId) => {
         throw new BookingError("Forbidden: only the booking owner can cancel this booking", 403);
     }
 
-    // B10 / B11: Conflict checks (409)
     if (booking.status === "CANCELLED") {
         throw new BookingError("Booking is already cancelled", 409);
     }

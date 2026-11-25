@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import StatsPage from "./pages/StatsPage";
 import ResourcesPage from "./pages/ResourcesPage";
+import BookingsPage from "./pages/BookingsPage";
 
 export default function App() {
     return (
@@ -26,6 +27,7 @@ export default function App() {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/stats" element={<StatsPage />} />
                     <Route path="/resources" element={<ResourcesPage />} />
+                    <Route path="/bookings" element={<BookingsPage />} />
                 </Route>
 
 
