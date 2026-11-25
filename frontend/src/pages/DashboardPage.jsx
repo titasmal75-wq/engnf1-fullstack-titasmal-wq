@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ticketRestApi from "../restapi/ticketRestApi";
+import { ROUTES } from "../routes/routePaths";
+import Navbar from "../components/Navbar";
 import "../styles/dashboard.css";
 
 const CATEGORIES = ["BILLING", "LOGIN", "DELIVERY", "BUG", "FEATURE_REQUEST"];
@@ -12,6 +14,7 @@ export default function DashboardPage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
+
     const [tickets, setTickets] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -19,19 +22,28 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
     const [priorityFilter, setPriorityFilter] = useState("");
 
+
     const [selectedTicketId, setSelectedTicketId] = useState(null);
     const [ticketDetail, setTicketDetail] = useState(null);
     const [events, setEvents] = useState([]);
     const [loadingDetail, setLoadingDetail] = useState(false);
-    const [patchLoading, setPatchLoading] = useState(false);
+
+
+    const [savingField, setSavingField] = useState(null);
     const [patchError, setPatchError] = useState("");
     const [patchSuccess, setPatchSuccess] = useState("");
+    const successTimerRef = useRef(null);
+
+
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
 
     const [showImportModal, setShowImportModal] = useState(false);
     const [importJson, setImportJson] = useState(`[
@@ -49,6 +61,7 @@ export default function DashboardPage() {
     const [importLoading, setImportLoading] = useState(false);
     const [importResult, setImportResult] = useState(null);
     const [importError, setImportError] = useState("");
+    const [jsonValidationNotice, setJsonValidationNotice] = useState("");
 
 
     useEffect(() => {
@@ -58,6 +71,13 @@ export default function DashboardPage() {
         }, 300);
         return () => clearTimeout(timer);
     }, [searchQuery]);
+
+
+    useEffect(() => {
+        return () => {
+            if (successTimerRef.current) clearTimeout(successTimerRef.current);
+        };
+    }, []);
 
     const fetchTickets = useCallback(async () => {
         setLoading(true);
@@ -88,7 +108,7 @@ export default function DashboardPage() {
         fetchTickets();
     }, [fetchTickets]);
 
-    // Fetch ticket detail
+
     const openTicketDetail = async (id) => {
         setSelectedTicketId(id);
         setLoadingDetail(true);
@@ -112,14 +132,62 @@ export default function DashboardPage() {
         setEvents([]);
         setPatchError("");
         setPatchSuccess("");
+        setSavingField(null);
     };
 
 
     const handleUpdateField = async (field, value) => {
         if (!ticketDetail) return;
-        setPatchLoading(true);
+
+        if (field === "status" && !STATUSES.includes(value)) {
+            setPatchError(`Validation Error: "${value}" is not a valid status.`);
+            return;
+        }
+        if (field === "category" && !CATEGORIES.includes(value)) {
+            setPatchError(`Validation Error: "${value}" is not a valid category.`);
+            return;
+        }
+        if (field === "priority" && !PRIORITIES.includes(value)) {
+            setPatchError(`Validation Error: "${value}" is not a valid priority.`);
+            return;
+        }
+
+        if (ticketDetail[field] === value) return;
+
+        const prevTicket = { ...ticketDetail };
+        const prevTicketsList = [...tickets];
+        const prevEvents = [...events];
+
+        const optimisticTicket = {
+            ...ticketDetail,
+            [field]: value,
+            isHumanOverride: true,
+        };
+        setTicketDetail(optimisticTicket);
+
+
+        setTickets((prev) =>
+            prev.map((t) => (t._id === ticketDetail._id ? { ...t, [field]: value, isHumanOverride: true } : t))
+        );
+
+
+        const optimisticEvent = {
+            _id: `temp-${Date.now()}`,
+            ticketId: ticketDetail._id,
+            field,
+            oldValue: ticketDetail[field],
+            newValue: value,
+            actor: user?.email ? `${user.email} (You)` : "Agent (You)",
+            createdAt: new Date().toISOString(),
+            isOptimistic: true,
+        };
+        setEvents((prev) => [optimisticEvent, ...prev]);
+
+
+        setSavingField(field);
         setPatchError("");
         setPatchSuccess("");
+
         try {
             const updates = { [field]: value };
             const data = await ticketRestApi.updateTicket(
@@ -127,18 +195,30 @@ export default function DashboardPage() {
                 updates,
                 user?.email || "Agent"
             );
+
             setTicketDetail(data.ticket);
             setEvents(data.events || []);
-            setPatchSuccess(`Updated ${field} successfully`);
-
             setTickets((prev) =>
                 prev.map((t) => (t._id === data.ticket._id ? data.ticket : t))
             );
+
+            setPatchSuccess(`⚡ Instant Sync: Updated ${field} → "${value}"`);
+
+            if (successTimerRef.current) clearTimeout(successTimerRef.current);
+            successTimerRef.current = setTimeout(() => {
+                setPatchSuccess("");
+            }, 3500);
         } catch (err) {
-            console.error("Error updating ticket:", err);
-            setPatchError(err.response?.data?.message || "Update failed");
+            console.error("Optimistic update failed:", err);
+
+            setTicketDetail(prevTicket);
+            setTickets(prevTicketsList);
+            setEvents(prevEvents);
+
+            const serverMsg = err.response?.data?.message || err.message || "Network error";
+            setPatchError(`⚠️ Update failed: ${serverMsg}. Reverted ${field} back to "${prevTicket[field]}".`);
         } finally {
-            setPatchLoading(false);
+            setSavingField(null);
         }
     };
 
@@ -147,17 +227,42 @@ export default function DashboardPage() {
         setImportLoading(true);
         setImportError("");
         setImportResult(null);
+        setJsonValidationNotice("");
+
         try {
+            if (!importJson || !importJson.trim()) {
+                throw new Error("Validation Error: JSON payload cannot be empty.");
+            }
+
             let parsed;
             try {
                 parsed = JSON.parse(importJson);
-            } catch {
-                throw new Error("Invalid JSON format. Please check the syntax.");
+            } catch (jsonErr) {
+                throw new Error(`JSON Syntax Error: ${jsonErr.message}. Please check brackets and quotes.`);
             }
 
             const ticketsArray = Array.isArray(parsed) ? parsed : parsed.tickets;
             if (!Array.isArray(ticketsArray) || ticketsArray.length === 0) {
-                throw new Error("JSON must be a non-empty array or { tickets: [...] }");
+                throw new Error("Validation Error: JSON must be an array of tickets or an object with { tickets: [...] }.");
+            }
+
+
+            for (let i = 0; i < ticketsArray.length; i++) {
+                const item = ticketsArray[i];
+                const indexLabel = `Ticket #${i + 1}`;
+
+                if (!item || typeof item !== "object") {
+                    throw new Error(`Validation Error on ${indexLabel}: Item must be a valid JSON object.`);
+                }
+                if (!item.externalId || typeof item.externalId !== "string" || !item.externalId.trim()) {
+                    throw new Error(`Validation Error on ${indexLabel}: "externalId" is required.`);
+                }
+                if (!item.subject || typeof item.subject !== "string" || item.subject.trim().length < 3) {
+                    throw new Error(`Validation Error on ${indexLabel}: "subject" is required and must be at least 3 characters.`);
+                }
+                if (item.subject.trim().length > 200) {
+                    throw new Error(`Validation Error on ${indexLabel}: "subject" exceeds maximum allowed length (200 characters).`);
+                }
             }
 
             const result = await ticketRestApi.importTickets(ticketsArray);
@@ -165,7 +270,7 @@ export default function DashboardPage() {
             fetchTickets();
         } catch (err) {
             console.error("Import error:", err);
-            setImportError(err.response?.data?.message || err.message || "Failed to import");
+            setImportError(err.response?.data?.message || err.message || "Failed to import tickets");
         } finally {
             setImportLoading(false);
         }
@@ -173,50 +278,30 @@ export default function DashboardPage() {
 
     const handleLogout = async () => {
         await logout();
-        navigate("/login");
+        navigate(ROUTES.LOGIN);
     };
 
     return (
         <div className="dashboard-wrapper">
-
-            <header className="dashboard-header">
-                <div className="header-left">
-                    <div className="brand-logo">⚡ TriageSync</div>
-                    <span className="brand-subtitle">AI-Assisted Ticket Classifier & Review</span>
-                </div>
-                <div className="header-right">
-                    <div className="user-mini-badge">
-                        <span className="avatar-mini">{user?.name?.charAt(0).toUpperCase()}</span>
-                        <div className="user-mini-text">
-                            <span className="user-name">{user?.name}</span>
-                            <span className="role-chip">{user?.role}</span>
-                        </div>
-                    </div>
+            <Navbar
+                subtitle="Smart AI Ticket Classification & Human Review"
+                extraAction={
                     <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
-                        📥 Import Tickets
+                        📥 Import
                     </button>
-                    <button className="btn-secondary" onClick={() => navigate("/stats")}>
-                        📊 Stats
-                    </button>
-                    <button className="btn-secondary" onClick={() => navigate("/resources")}>
-                        🏢 Resources
-                    </button>
-                    <button className="btn-secondary" onClick={() => navigate("/bookings")}>
-                        📅 Bookings
-                    </button>
-                    <button className="logout-btn" onClick={handleLogout}>
-                        Log out
-                    </button>
-                </div>
-            </header>
+                }
+            />
 
             <main className="dashboard-container">
 
                 <div className="overview-bar">
-                    <div>
-                        <h2>Ticket Triage Inbox</h2>
+                    <div className="overview-title-group">
+                        <div className="overview-heading-row">
+                            <h2>Ticket Triage Inbox</h2>
+                            <span className="badge-optimistic-tag">⚡ Optimistic Real-Time UI</span>
+                        </div>
                         <p className="overview-sub">
-                            Manage AI-classified tickets, review categories, and maintain human override logs.
+                            AI-classified queue with instant optimistic triage, automatic rollback, and full audit logs.
                         </p>
                     </div>
                     <div className="stats-badges">
@@ -226,6 +311,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 </div>
+
 
                 <div className="filters-card">
                     <div className="search-box">
@@ -237,7 +323,7 @@ export default function DashboardPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                         {searchQuery && (
-                            <button className="clear-btn" onClick={() => setSearchQuery("")}>
+                            <button className="clear-btn" onClick={() => setSearchQuery("")} title="Clear search">
                                 ✕
                             </button>
                         )}
@@ -250,6 +336,7 @@ export default function DashboardPage() {
                                 setStatusFilter(e.target.value);
                                 setPage(1);
                             }}
+                            className="filter-select"
                         >
                             <option value="">All Statuses</option>
                             {STATUSES.map((s) => (
@@ -265,6 +352,7 @@ export default function DashboardPage() {
                                 setCategoryFilter(e.target.value);
                                 setPage(1);
                             }}
+                            className="filter-select"
                         >
                             <option value="">All Categories</option>
                             {CATEGORIES.map((c) => (
@@ -280,6 +368,7 @@ export default function DashboardPage() {
                                 setPriorityFilter(e.target.value);
                                 setPage(1);
                             }}
+                            className="filter-select"
                         >
                             <option value="">All Priorities</option>
                             {PRIORITIES.map((p) => (
@@ -343,7 +432,7 @@ export default function DashboardPage() {
                                         <tr
                                             key={t._id}
                                             onClick={() => openTicketDetail(t._id)}
-                                            className={selectedTicketId === t._id ? "selected-row" : ""}
+                                            className={`ticket-table-row ${selectedTicketId === t._id ? "selected-row" : ""}`}
                                         >
                                             <td className="cell-id">
                                                 <span className="ext-badge">{t.externalId}</span>
@@ -353,24 +442,24 @@ export default function DashboardPage() {
                                                 <div className="body-preview">{t.body}</div>
                                             </td>
                                             <td>
-                                                <span className={`badge-pill category-${t.category.toLowerCase()}`}>
+                                                <span className={`badge-pill category-${t.category?.toLowerCase()}`}>
                                                     {t.category}
                                                 </span>
                                             </td>
                                             <td>
-                                                <span className={`badge-pill priority-${t.priority.toLowerCase()}`}>
+                                                <span className={`badge-pill priority-${t.priority?.toLowerCase()}`}>
                                                     {t.priority}
                                                 </span>
                                             </td>
                                             <td>
-                                                <span className={`badge-pill status-${t.status.toLowerCase()}`}>
+                                                <span className={`badge-pill status-${t.status?.toLowerCase()}`}>
                                                     {t.status}
                                                 </span>
                                             </td>
                                             <td>
                                                 {t.isHumanOverride ? (
                                                     <span className="override-indicator human" title="Manual human edit made">
-                                                        👤 Override
+                                                        👤 Human
                                                     </span>
                                                 ) : (
                                                     <span className="override-indicator auto" title="Classified by AI rule service">
@@ -399,7 +488,7 @@ export default function DashboardPage() {
                     {totalPages > 1 && (
                         <div className="pagination-bar">
                             <span className="pagination-info">
-                                Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} total)
+                                Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} total tickets)
                             </span>
                             <div className="pagination-controls">
                                 <button
@@ -430,7 +519,7 @@ export default function DashboardPage() {
                                 </span>
                                 <h3>Ticket Review & Event Audit</h3>
                             </div>
-                            <button className="drawer-close" onClick={closeTicketDetail}>
+                            <button className="drawer-close" onClick={closeTicketDetail} title="Close drawer">
                                 ✕
                             </button>
                         </div>
@@ -442,6 +531,19 @@ export default function DashboardPage() {
                             </div>
                         ) : ticketDetail ? (
                             <div className="drawer-content">
+
+                                <div className={`optimistic-status-bar ${savingField ? "syncing" : "synced"}`}>
+                                    <div className="sync-status-indicator">
+                                        <span className={`sync-dot ${savingField ? "pulsing" : "ready"}`}></span>
+                                        <span className="sync-status-title">
+                                            {savingField
+                                                ? `Optimistically saving ${savingField}...`
+                                                : "Instant Optimistic Sync Ready"}
+                                        </span>
+                                    </div>
+                                    <span className="sync-mode-tag">Zero-Latency UI</span>
+                                </div>
+
                                 {patchError && <div className="alert-banner error">{patchError}</div>}
                                 {patchSuccess && <div className="alert-banner success">{patchSuccess}</div>}
 
@@ -452,14 +554,26 @@ export default function DashboardPage() {
                                 </div>
 
                                 <div className="detail-section">
-                                    <h4 className="section-title">Classification & Controls (PATCH)</h4>
+                                    <div className="section-title-row">
+                                        <h4 className="section-title">Classification & Controls (PATCH)</h4>
+                                        <span className="live-feedback-text">
+                                            {savingField ? `Saving ${savingField}...` : "Changes save instantly"}
+                                        </span>
+                                    </div>
+
                                     <div className="control-grid">
-                                        <div className="control-group">
-                                            <label>Status</label>
+                                        <div className={`control-group ${savingField === "status" ? "field-saving" : ""}`}>
+                                            <div className="control-label-row">
+                                                <label>Status</label>
+                                                {savingField === "status" && (
+                                                    <span className="mini-saving-tag">Saving...</span>
+                                                )}
+                                            </div>
                                             <select
                                                 value={ticketDetail.status}
-                                                disabled={patchLoading}
+                                                disabled={savingField === "status"}
                                                 onChange={(e) => handleUpdateField("status", e.target.value)}
+                                                className="control-select"
                                             >
                                                 {STATUSES.map((s) => (
                                                     <option key={s} value={s}>
@@ -469,12 +583,18 @@ export default function DashboardPage() {
                                             </select>
                                         </div>
 
-                                        <div className="control-group">
-                                            <label>Category</label>
+                                        <div className={`control-group ${savingField === "category" ? "field-saving" : ""}`}>
+                                            <div className="control-label-row">
+                                                <label>Category</label>
+                                                {savingField === "category" && (
+                                                    <span className="mini-saving-tag">Saving...</span>
+                                                )}
+                                            </div>
                                             <select
                                                 value={ticketDetail.category}
-                                                disabled={patchLoading}
+                                                disabled={savingField === "category"}
                                                 onChange={(e) => handleUpdateField("category", e.target.value)}
+                                                className="control-select"
                                             >
                                                 {CATEGORIES.map((c) => (
                                                     <option key={c} value={c}>
@@ -484,12 +604,18 @@ export default function DashboardPage() {
                                             </select>
                                         </div>
 
-                                        <div className="control-group">
-                                            <label>Priority</label>
+                                        <div className={`control-group ${savingField === "priority" ? "field-saving" : ""}`}>
+                                            <div className="control-label-row">
+                                                <label>Priority</label>
+                                                {savingField === "priority" && (
+                                                    <span className="mini-saving-tag">Saving...</span>
+                                                )}
+                                            </div>
                                             <select
                                                 value={ticketDetail.priority}
-                                                disabled={patchLoading}
+                                                disabled={savingField === "priority"}
                                                 onChange={(e) => handleUpdateField("priority", e.target.value)}
+                                                className="control-select"
                                             >
                                                 {PRIORITIES.map((p) => (
                                                     <option key={p} value={p}>
@@ -503,12 +629,12 @@ export default function DashboardPage() {
                                     <div className="meta-info-grid">
                                         <div className="meta-item">
                                             <span className="meta-key">AI Auto Category:</span>
-                                            <span className="meta-val">{ticketDetail.autoCategory}</span>
+                                            <span className="meta-val">{ticketDetail.autoCategory || "None"}</span>
                                         </div>
                                         <div className="meta-item">
                                             <span className="meta-key">Human Override:</span>
                                             <span className="meta-val">
-                                                {ticketDetail.isHumanOverride ? "✅ Yes (Preserved)" : "No"}
+                                                {ticketDetail.isHumanOverride ? "✅ Yes (Preserved)" : "No (AI untouched)"}
                                             </span>
                                         </div>
                                         <div className="meta-item">
@@ -520,23 +646,34 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
 
-                                {/* Event Audit Timeline */}
+
                                 <div className="detail-section">
-                                    <h4 className="section-title">Audit Log / Ticket Events</h4>
+                                    <div className="section-title-row">
+                                        <h4 className="section-title">Audit Log / Ticket Events</h4>
+                                        <span className="timeline-count-badge">{events.length} records</span>
+                                    </div>
+
                                     {events.length === 0 ? (
                                         <p className="no-events-text">No events recorded for this ticket yet.</p>
                                     ) : (
                                         <div className="timeline-container">
                                             {events.map((ev, idx) => (
-                                                <div key={ev._id || idx} className="timeline-item">
-                                                    <div className="timeline-marker"></div>
+                                                <div
+                                                    key={ev._id || idx}
+                                                    className={`timeline-item ${ev.isOptimistic ? "optimistic-item" : ""}`}
+                                                >
+                                                    <div className={`timeline-marker ${ev.isOptimistic ? "pulse-marker" : ""}`}></div>
                                                     <div className="timeline-body">
                                                         <div className="timeline-header">
                                                             <span className="event-field-badge">{ev.field}</span>
                                                             <span className="event-actor">by {ev.actor}</span>
-                                                            <span className="event-time">
-                                                                {new Date(ev.createdAt).toLocaleTimeString()}
-                                                            </span>
+                                                            {ev.isOptimistic ? (
+                                                                <span className="optimistic-chip">Syncing...</span>
+                                                            ) : (
+                                                                <span className="event-time">
+                                                                    {new Date(ev.createdAt).toLocaleTimeString()}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <div className="event-change">
                                                             <span className="old-val">{String(ev.oldValue ?? "None")}</span>
@@ -555,14 +692,13 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {/* Import Tickets Modal (POST /api/tickets/import) */}
             {showImportModal && (
                 <div className="drawer-overlay" onClick={() => setShowImportModal(false)}>
                     <div className="modal-box" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <div>
-                                <h3>Batch Import Tickets (POST /api/tickets/import)</h3>
-                                <p>Provide JSON with tickets to be classified and upserted.</p>
+                                <h3>Batch Import Tickets</h3>
+                                <p>Provide JSON array with tickets. Includes schema validation before submission.</p>
                             </div>
                             <button className="drawer-close" onClick={() => setShowImportModal(false)}>
                                 ✕
@@ -571,6 +707,9 @@ export default function DashboardPage() {
 
                         <div className="modal-body">
                             {importError && <div className="alert-banner error">{importError}</div>}
+                            {jsonValidationNotice && (
+                                <div className="alert-banner warning">{jsonValidationNotice}</div>
+                            )}
                             {importResult && (
                                 <div className="alert-banner success">
                                     <strong>Import Complete:</strong>
@@ -583,12 +722,18 @@ export default function DashboardPage() {
                                 </div>
                             )}
 
-                            <label className="input-label">Payload JSON (array of {`{ externalId, subject, body }`}):</label>
+                            <label className="input-label">
+                                Payload JSON (array of {`{ externalId, subject, body }`}):
+                            </label>
                             <textarea
                                 className="import-textarea"
-                                rows={10}
+                                rows={9}
                                 value={importJson}
-                                onChange={(e) => setImportJson(e.target.value)}
+                                onChange={(e) => {
+                                    setImportJson(e.target.value);
+                                    setImportError("");
+                                }}
+                                placeholder="[ { 'externalId': 'EXT-1', 'subject': '...', 'body': '...' } ]"
                             />
                         </div>
 
@@ -601,7 +746,7 @@ export default function DashboardPage() {
                                 disabled={importLoading}
                                 onClick={handleImport}
                             >
-                                {importLoading ? "Importing..." : "Execute Import"}
+                                {importLoading ? "Validating & Importing..." : "Validate & Execute Import"}
                             </button>
                         </div>
                     </div>

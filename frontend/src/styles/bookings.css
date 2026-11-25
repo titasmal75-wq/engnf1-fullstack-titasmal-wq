@@ -1,8 +1,9 @@
 .bookings-wrapper {
     min-height: 100vh;
-    background: #0f1117;
-    color: #e2e8f0;
+    background: #ffffff !important;
+    color: #1e293b;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    animation: pageFadeIn 0.3s ease-out;
 }
 
 .bookings-container {
@@ -15,30 +16,31 @@
     display: flex;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
-    border-bottom: 1px solid #2d3148;
+    border-bottom: 1px solid #e2e8f0;
     padding-bottom: 0.5rem;
 }
 
 .tab-btn {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: #64748b;
     font-size: 0.95rem;
     font-weight: 600;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    padding: 0.55rem 1.1rem;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tab-btn:hover {
-    color: #f8fafc;
-    background: #1e2130;
+    color: #1e293b;
+    background: #f1f5f9;
 }
 
 .tab-btn.active {
-    color: #3b82f6;
-    background: rgba(59, 130, 246, 0.12);
+    color: #4f46e5;
+    background: #eff6ff;
+    font-weight: 700;
 }
 
 .status-badge {
@@ -51,27 +53,27 @@
 }
 
 .status-pending {
-    background: rgba(245, 158, 11, 0.18);
-    color: #fbbf24;
-    border: 1px solid rgba(245, 158, 11, 0.35);
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
 }
 
 .status-approved {
-    background: rgba(16, 185, 129, 0.18);
-    color: #34d399;
-    border: 1px solid rgba(16, 185, 129, 0.35);
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
 }
 
 .status-rejected {
-    background: rgba(239, 68, 68, 0.18);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
 }
 
 .status-cancelled {
-    background: rgba(148, 163, 184, 0.15);
-    color: #94a3b8;
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
 }
 
 .time-slot-display {
@@ -81,41 +83,43 @@
 }
 
 .time-slot-primary {
-    font-weight: 600;
-    color: #f8fafc;
-    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 0.9rem;
 }
 
 .time-slot-secondary {
-    font-size: 0.75rem;
-    color: #94a3b8;
+    font-size: 0.78rem;
+    color: #64748b;
 }
 
 .rejection-note-callout {
-    margin-top: 0.4rem;
-    padding: 0.4rem 0.6rem;
-    background: rgba(239, 68, 68, 0.08);
+    margin-top: 0.45rem;
+    padding: 0.45rem 0.75rem;
+    background: #fef2f2;
     border-left: 3px solid #ef4444;
     border-radius: 4px;
-    font-size: 0.78rem;
-    color: #fca5a5;
+    font-size: 0.8rem;
+    color: #991b1b;
+    animation: smoothScaleIn 0.2s ease-out;
 }
 
 .btn-cancel-booking {
-    background: transparent;
+    background: #ffffff;
     color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.4);
+    border: 1px solid #fca5a5;
     border-radius: 6px;
-    padding: 0.35rem 0.65rem;
+    padding: 0.4rem 0.75rem;
     font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-cancel-booking:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.15);
+    background: #fef2f2;
     border-color: #ef4444;
+    transform: translateY(-1px);
 }
 
 .btn-cancel-booking:disabled {
@@ -124,60 +128,101 @@
 }
 
 .btn-approve {
-    background: #059669;
-    color: #fff;
+    background: #10b981;
+    color: #ffffff;
     border: none;
     border-radius: 6px;
-    padding: 0.35rem 0.65rem;
+    padding: 0.4rem 0.75rem;
     font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
 }
 
 .btn-approve:hover {
-    background: #047857;
+    background: #059669;
+    transform: translateY(-1px);
 }
 
 .btn-reject {
-    background: #dc2626;
-    color: #fff;
+    background: #ef4444;
+    color: #ffffff;
     border: none;
     border-radius: 6px;
-    padding: 0.35rem 0.65rem;
+    padding: 0.4rem 0.75rem;
     font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
 }
 
 .btn-reject:hover {
-    background: #b91c1c;
+    background: #dc2626;
+    transform: translateY(-1px);
 }
 
 .char-counter {
     font-size: 0.75rem;
-    color: #94a3b8;
+    color: #64748b;
     text-align: right;
-    margin-top: 0.2rem;
+    margin-top: 0.25rem;
+    font-weight: 600;
 }
 
 .char-counter.valid {
-    color: #34d399;
+    color: #10b981;
 }
 
 .char-counter.invalid {
-    color: #f87171;
+    color: #ef4444;
 }
 
 .grid-helper-tip {
-    font-size: 0.75rem;
-    color: #60a5fa;
-    margin-top: 0.2rem;
+    font-size: 0.78rem;
+    color: #4f46e5;
+    margin-top: 0.25rem;
+    font-weight: 500;
 }
 
 .time-picker-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .bookings-container {
+        padding: 16px;
+    }
+
+    .tab-nav {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .tab-btn {
+        flex: 1;
+        text-align: center;
+        padding: 8px 12px;
+    }
+
+    .time-picker-row {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .btn-approve,
+    .btn-reject,
+    .btn-cancel-booking {
+        width: 100%;
+        text-align: center;
+        padding: 8px;
+    }
 }

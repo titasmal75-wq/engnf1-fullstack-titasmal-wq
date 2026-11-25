@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import resourceRestApi from "../restapi/resourceRestApi";
+import Navbar from "../components/Navbar";
 import "../styles/dashboard.css";
 import "../styles/resources.css";
 
@@ -233,31 +234,16 @@ export default function ResourcesPage() {
 
     return (
         <div className="resources-wrapper">
-            <header className="dashboard-header">
-                <div className="header-left">
-                    <div className="brand-logo">⚡ TriageSync</div>
-                    <span className="brand-subtitle">Resource Management & Availability</span>
-                </div>
-                <div className="header-right">
-                    <button className="btn-secondary" onClick={() => navigate("/dashboard")}>
-                        🎫 Tickets
-                    </button>
-                    <button className="btn-secondary" onClick={() => navigate("/stats")}>
-                        📊 Stats
-                    </button>
-                    <button className="btn-secondary" onClick={() => navigate("/bookings")}>
-                        📅 Bookings
-                    </button>
-                    <div className="user-mini-badge">
-                        <span className="avatar-mini">{user?.name?.charAt(0).toUpperCase()}</span>
-                        <div className="user-mini-text">
-                            <span className="user-name">{user?.name}</span>
-                            <span className="role-chip">{user?.role}</span>
-                        </div>
-                    </div>
-                    <button className="logout-btn" onClick={handleLogout}>Log out</button>
-                </div>
-            </header>
+            <Navbar
+                subtitle="Resource Management & Availability"
+                extraAction={
+                    user?.role === "ADMIN" ? (
+                        <button className="btn-primary" onClick={handleOpenCreate}>
+                            ➕ Add Resource
+                        </button>
+                    ) : null
+                }
+            />
 
             <main className="resources-container">
                 <div className="overview-bar">

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import bookingRestApi from "../restapi/bookingRestApi";
 import resourceRestApi from "../restapi/resourceRestApi";
+import Navbar from "../components/Navbar";
 import "../styles/dashboard.css";
 import "../styles/resources.css";
 import "../styles/bookings.css";
@@ -44,7 +45,6 @@ export default function BookingsPage() {
     const [actionSuccess, setActionSuccess] = useState("");
 
     const [availableResources, setAvailableResources] = useState([]);
-    e
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [createForm, setCreateForm] = useState({
         resourceId: "",
@@ -227,31 +227,14 @@ export default function BookingsPage() {
 
     return (
         <div className="bookings-wrapper">
-            <header className="dashboard-header">
-                <div className="header-left">
-                    <div className="brand-logo">⚡ TriageSync</div>
-                    <span className="brand-subtitle">Facility & Resource Reservations</span>
-                </div>
-                <div className="header-right">
-                    <button className="btn-secondary" onClick={() => navigate("/dashboard")}>
-                        🎫 Tickets
+            <Navbar
+                subtitle="Facility & Resource Reservations"
+                extraAction={
+                    <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+                        ➕ New Booking
                     </button>
-                    <button className="btn-secondary" onClick={() => navigate("/stats")}>
-                        📊 Stats
-                    </button>
-                    <button className="btn-secondary" onClick={() => navigate("/resources")}>
-                        🏢 Resources
-                    </button>
-                    <div className="user-mini-badge">
-                        <span className="avatar-mini">{user?.name?.charAt(0).toUpperCase()}</span>
-                        <div className="user-mini-text">
-                            <span className="user-name">{user?.name}</span>
-                            <span className="role-chip">{user?.role}</span>
-                        </div>
-                    </div>
-                    <button className="logout-btn" onClick={handleLogout}>Log out</button>
-                </div>
-            </header>
+                }
+            />
 
             <main className="bookings-container">
                 <div className="overview-bar">

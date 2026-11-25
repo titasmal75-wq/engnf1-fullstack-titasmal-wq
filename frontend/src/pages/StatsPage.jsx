@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ticketRestApi from "../restapi/ticketRestApi";
+import Navbar from "../components/Navbar";
 import "../styles/stats.css";
 
 export default function StatsPage() {
@@ -60,33 +61,13 @@ export default function StatsPage() {
 
     return (
         <div className="stats-wrapper">
-            <header className="dashboard-header">
-                <div className="header-left">
-                    <div className="brand-logo">⚡ TriageSync</div>
-                    <span className="brand-subtitle">
-                        {isAdmin ? "Admin Executive & Operational Statistics" : "Model Agreement & Ticket Stats"}
-                    </span>
-                </div>
-                <div className="header-right">
-                    <button className="btn-secondary" onClick={() => navigate("/dashboard")}>
-                        🎫 Tickets
-                    </button>
-                    <button className="btn-secondary" onClick={() => navigate("/resources")}>
-                        🏢 Resources
-                    </button>
-                    <button className="btn-secondary" onClick={() => navigate("/bookings")}>
-                        📅 Bookings
-                    </button>
-                    <div className="user-mini-badge">
-                        <span className="avatar-mini">{user?.name?.charAt(0).toUpperCase()}</span>
-                        <div className="user-mini-text">
-                            <span className="user-name">{user?.name}</span>
-                            <span className="role-chip">{user?.role}</span>
-                        </div>
-                    </div>
-                    <button className="logout-btn" onClick={handleLogout}>Log out</button>
-                </div>
-            </header>
+            <Navbar
+                subtitle={
+                    isAdmin
+                        ? "Admin Executive & Operational Statistics"
+                        : "Model Agreement & Ticket Stats"
+                }
+            />
 
             <main className="stats-main">
                 <div className="overview-bar">
