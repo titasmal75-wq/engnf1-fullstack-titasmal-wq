@@ -93,7 +93,7 @@ export default function DashboardPage() {
             if (debouncedSearch.trim()) params.q = debouncedSearch.trim();
 
             const data = await ticketRestApi.getTickets(params);
-            setTickets(data.tickets || []);
+            setTickets(data.data || data.tickets || []);
             setTotal(data.total || 0);
             setTotalPages(data.totalPages || 1);
         } catch (err) {

@@ -27,8 +27,6 @@ const createBookingController = async (req, res) => {
         const booking = await createBooking(userId, req.body);
 
         return res.status(201).json({
-            success: true,
-            message: "Booking created successfully",
             booking,
             data: booking
         });
@@ -111,16 +109,11 @@ const getMyBookings = async (req, res) => {
         ]);
 
         return res.status(200).json({
-            success: true,
-            message: "My bookings fetched successfully",
-            pagination: {
-                currentPage: pageNumber,
-                limit,
-                totalBookings,
-                totalPages: Math.ceil(totalBookings / limit)
-            },
-            bookings,
-            data: bookings
+            data: bookings,
+            page: pageNumber,
+            pageSize: limit,
+            total: totalBookings,
+            totalPages: Math.ceil(totalBookings / limit)
         });
 
     } catch (error) {
@@ -135,10 +128,16 @@ const getMyBookings = async (req, res) => {
 const getBookingsController = async (req, res) => {
     try {
         const bookings = await getBookings(req.query, req.user);
+        const page = Number(req.query.page || 1);
+        const pageSize = 10;
+        const total = bookings.length;
+        const paged = bookings.slice((page - 1) * pageSize, page * pageSize);
         return res.status(200).json({
-            success: true,
-            data: bookings,
-            bookings
+            data: paged,
+            page,
+            pageSize,
+            total,
+            totalPages: Math.ceil(total / pageSize)
         });
     } catch (error) {
         if (error instanceof BookingError) {

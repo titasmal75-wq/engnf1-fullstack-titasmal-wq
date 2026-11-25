@@ -36,6 +36,7 @@ export default function RegisterPage() {
             });
         } catch (err) {
             const message =
+                err.response?.data?.error?.message ||
                 err.response?.data?.message ||
                 (err.request
                     ? "Unable to reach server. Please ensure the backend is running."

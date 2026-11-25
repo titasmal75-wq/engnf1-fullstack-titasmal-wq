@@ -88,18 +88,18 @@ export default function BookingsPage() {
                 data = await bookingRestApi.getAllBookings(params);
                 const list = data.bookings || data.data || [];
                 setBookings(list);
-                setTotal(list.length);
-                setTotalPages(1);
+                setTotal(data.total ?? list.length);
+                setTotalPages(data.totalPages ?? 1);
             } else {
                 data = await bookingRestApi.getMyBookings(params);
                 const list = data.bookings || data.data || [];
                 setBookings(list);
-                setTotal(data.pagination?.totalBookings ?? list.length);
-                setTotalPages(data.pagination?.totalPages ?? 1);
+                setTotal(data.total ?? list.length);
+                setTotalPages(data.totalPages ?? 1);
             }
         } catch (err) {
             console.error("Error loading bookings:", err);
-            setError(err.response?.data?.message || "Failed to load bookings");
+            setError(err.response?.data?.error?.message || err.response?.data?.message || "Failed to load bookings");
         } finally {
             setLoading(false);
         }

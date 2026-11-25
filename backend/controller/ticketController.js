@@ -28,7 +28,7 @@ const VALID_STATUSES = [
 
 const importTickets = async (req, res) => {
     try {
-        const { tickets } = req.body;
+        const tickets = Array.isArray(req.body) ? req.body : req.body?.tickets;
 
         if (!Array.isArray(tickets) || tickets.length === 0) {
             return res.status(400).json({
@@ -82,9 +82,6 @@ const importTickets = async (req, res) => {
                 existing.body = body.trim();
 
                 if (existing.isHumanOverride) {
-                    // Preserve human category and priority
-                    existing.latestAutoCategory = autoCategory;
-
                     skippedOverrideCount++;
                 } else {
                     existing.autoCategory = autoCategory;
@@ -212,11 +209,11 @@ const getTickets = async (req, res) => {
         ]);
 
         return res.status(200).json({
-            success: true,
+            data: tickets,
             tickets,
             total,
             page: pageNum,
-            limit: limitNum,
+            pageSize: limitNum,
             totalPages: Math.ceil(total / limitNum)
         });
 
@@ -384,10 +381,10 @@ const updateTicket = async (req, res) => {
             ticket[change.field] = change.newValue;
         });
 
-        // Any PATCH by a human sets isHumanOverride=true (spec T-B3)
-        ticket.isHumanOverride = true;
-
         const categoryChanged = changes.some(change => change.field === "category");
+        if (categoryChanged) {
+            ticket.isHumanOverride = true;
+        }
         const statusChangedFromOpen =
             oldStatus === "OPEN" &&
             ticket.status !== "OPEN";

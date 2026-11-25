@@ -72,12 +72,11 @@ const getResources = async (req, res) => {
         ]);
 
         return res.status(200).json({
-            success: true,
             data: resources,
             resources,
             total,
             page: currentPage,
-            limit,
+            pageSize: limit,
             totalPages: Math.ceil(total / limit),
             pagination: {
                 total,

@@ -13,27 +13,48 @@ const register = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
-        if (!name || !email || !password) {
-            return res.status(400).json({ message: "All fields are required" });
+        const trimmedName = typeof name === "string" ? name.trim() : "";
+        const normalizedEmail =
+            typeof email === "string" ? email.trim().toLowerCase() : "";
+
+        if (trimmedName.length < 2 || trimmedName.length > 50) {
+            return res.status(400).json({
+                error: { code: "VALIDATION_ERROR", message: "Name must be 2 to 50 characters" }
+            });
         }
 
-        if (password.length < 8) {
-            return res
-                .status(400)
-                .json({ message: "Password must contain at least 8 characters" });
+        if (normalizedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            return res.status(400).json({
+                error: { code: "VALIDATION_ERROR", message: "A valid email of at most 254 characters is required" }
+            });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
+        if (
+            typeof password !== "string" ||
+            password.length < 8 ||
+            password.length > 64 ||
+            !/[A-Za-z]/.test(password) ||
+            !/\d/.test(password)
+        ) {
+            return res.status(400).json({
+                error: {
+                    code: "VALIDATION_ERROR",
+                    message: "Password must be 8 to 64 characters and contain at least one letter and one digit"
+                }
+            });
+        }
 
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
-            return res.status(409).json({ message: "Email already exists" });
+            return res.status(409).json({
+                error: { code: "CONFLICT", message: "Email already exists" }
+            });
         }
 
         const passwordHash = await bcrypt.hash(password, 12);
 
         const user = await User.create({
-            name,
+            name: trimmedName,
             email: normalizedEmail,
             passwordHash,
             role: "USER",
@@ -65,9 +86,9 @@ const login = async (req, res) => {
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res
-                .status(400)
-                .json({ message: "Email and password are required" });
+            return res.status(400).json({
+                error: { code: "VALIDATION_ERROR", message: "Email and password are required" }
+            });
         }
 
         const user = await User.findOne({
@@ -75,16 +96,16 @@ const login = async (req, res) => {
         }).select("+passwordHash +refreshTokenHash");
 
         if (!user || !user.isActive) {
-            return res
-                .status(401)
-                .json({ message: "Invalid email or password" });
+            return res.status(401).json({
+                error: { code: "UNAUTHENTICATED", message: "Invalid email or password" }
+            });
         }
 
         const isMatch = await bcrypt.compare(password, user.passwordHash);
         if (!isMatch) {
-            return res
-                .status(401)
-                .json({ message: "Invalid email or password" });
+            return res.status(401).json({
+                error: { code: "UNAUTHENTICATED", message: "Invalid email or password" }
+            });
         }
 
         const accessToken = generateAccessToken(user._id);
@@ -99,6 +120,7 @@ const login = async (req, res) => {
 
         return res.status(200).json({
             message: "Login successful",
+            token: accessToken,
             accessToken,
             user: {
                 id: user._id,

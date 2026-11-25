@@ -33,7 +33,6 @@ const ticketSchema = new mongoose.Schema(
         "FEATURE_REQUEST",
       ],
       required: true,
-      immutable: true,
     },
 
     category: {
@@ -86,6 +85,7 @@ const ticketSchema = new mongoose.Schema(
 ticketSchema.index({ status: 1, createdAt: -1 });
 ticketSchema.index({ category: 1, priority: 1 });
 ticketSchema.index({ assigneeId: 1 });
+ticketSchema.index({ createdAt: -1 });
 
 ticketSchema.index({ createdAt: -1 });
 

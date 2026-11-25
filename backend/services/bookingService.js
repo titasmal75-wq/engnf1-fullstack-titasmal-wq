@@ -40,9 +40,9 @@ const validateBookingTime = (startTime, endTime) => {
 
     const duration = (end - start) / (1000 * 60);
 
-    if (duration < 30 || duration > 180) {
+    if (duration < 30 || duration > 240) {
         throw new BookingError(
-            "Booking duration must be between 30 and 180 minutes",
+            "Booking duration must be between 30 and 240 minutes",
             400
         );
     }
@@ -60,6 +60,16 @@ const validateBookingTime = (startTime, endTime) => {
             "Start and end times must follow 30-minute intervals",
             400
         );
+    }
+
+    const now = new Date();
+    if (start <= now) {
+        throw new BookingError("Start time must be in the future", 400);
+    }
+
+    const maxStart = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    if (start > maxStart) {
+        throw new BookingError("Start time must be at most 30 days ahead", 400);
     }
 
     return { start, end };
@@ -128,6 +138,19 @@ const createBooking = async (userId, data) => {
             if (resource.isActive === false) {
                 throw new BookingError(
                     "This resource is not available for booking",
+                    409
+                );
+            }
+
+            const futureBookingCount = await Booking.countDocuments({
+                userId,
+                status: { $in: ["PENDING", "APPROVED"] },
+                startTime: { $gt: new Date() }
+            }).session(session);
+
+            if (futureBookingCount >= 3) {
+                throw new BookingError(
+                    "A user can have at most 3 future PENDING or APPROVED bookings",
                     409
                 );
             }
@@ -221,6 +244,10 @@ const rejectBooking = async (bookingId, rejectionNote, user) => {
         throw new BookingError("Only pending bookings can be rejected", 400);
     }
 
+    if (new Date(booking.startTime) <= new Date()) {
+        throw new BookingError("Cannot reject a booking that has already started", 409);
+    }
+
     booking.status = "REJECTED";
     booking.rejectionNote = rejectionNote.trim();
     booking.decisionNote = rejectionNote.trim();
@@ -241,6 +268,10 @@ const approveBooking = async (bookingId, user) => {
 
     if (booking.status !== "PENDING") {
         throw new BookingError("Only pending bookings can be approved", 400);
+    }
+
+    if (new Date(booking.startTime) <= new Date()) {
+        throw new BookingError("Cannot approve a booking that has already started", 409);
     }
 
     booking.status = "APPROVED";
@@ -312,6 +343,9 @@ const cancelBooking = async (bookingId, userId) => {
 
     if (booking.status === "REJECTED") {
         throw new BookingError("Cannot cancel a rejected booking", 409);
+    }
+    if (booking.status !== "PENDING" && booking.status !== "APPROVED") {
+        throw new BookingError("Only pending or approved bookings can be cancelled", 409);
     }
 
     const now = new Date();
