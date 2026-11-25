@@ -29,12 +29,23 @@ export const getStats = async () => {
     return response.data;
 };
 
+export const getAdminStats = async () => {
+    try {
+        const response = await api.get("/admin/stats");
+        return response.data;
+    } catch {
+        const response = await api.get("/stats/admin");
+        return response.data;
+    }
+};
+
 const ticketRestApi = {
     importTickets,
     getTickets,
     getTicketById,
     updateTicket,
     getStats,
+    getAdminStats,
 };
 
 export default ticketRestApi;

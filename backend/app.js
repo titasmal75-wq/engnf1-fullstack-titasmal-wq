@@ -11,6 +11,7 @@ const ticketRoutes = require("./router/ticketRoutes");
 const statsRoutes = require("./router/statsRoutes");
 const resourceRoutes = require("./router/resourceRoutes");
 const bookingRoutes = require("./router/bookingRoutes");
+const adminRoutes = require("./router/adminRoutes");
 
 
 const app = express();
@@ -57,6 +58,7 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 app.use((err, req, res, next) => {
