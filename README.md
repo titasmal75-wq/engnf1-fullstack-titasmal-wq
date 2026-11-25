@@ -331,7 +331,7 @@ Ticket list filters include `status`, `category`, `priority`, `q`, `page`, and `
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
 | `POST` | `/api/bookings` | Authenticated | Create a PENDING booking |
-| `GET` | `/api/bookings/my` | Authenticated | Get the current user's bookings |
+| `GET` | `/api/bookings/mine` | Authenticated | Get the current user's bookings |
 | `GET` | `/api/bookings` | Authenticated | Get bookings (users are limited to their own; ADMIN can list all) |
 | `GET` | `/api/bookings/:id` | Owner or ADMIN | Get booking details |
 | `PATCH` | `/api/bookings/:id/cancel` | Owner | Cancel an eligible booking |

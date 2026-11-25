@@ -18,7 +18,7 @@ const roleMiddleware = require("../middleware/roleMiddleware");
 router.use(authMiddleware);
 
 router.post("/", createBookingController);
-router.get("/my", getMyBookings);
+router.get("/mine", getMyBookings);
 router.get("/", getBookingsController);
 router.get("/:id", getBookingByIdController);
 router.patch("/:id/cancel", cancelBookingController);
