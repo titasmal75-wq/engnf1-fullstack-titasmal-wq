@@ -79,7 +79,7 @@ export default function ResourcesPage() {
             setTotalPages(data.totalPages ?? data.pagination?.totalPages ?? 1);
         } catch (err) {
             console.error("Error fetching resources:", err);
-            setError(err.response?.data?.message || err.response?.data?.errors?.[0] || "Failed to load resources");
+            setError(err.response?.data?.error?.message || err.response?.data?.message || err.response?.data?.errors?.[0] || "Failed to load resources");
         } finally {
             setLoading(false);
         }
@@ -158,6 +158,7 @@ export default function ResourcesPage() {
             fetchResources();
         } catch (err) {
             setModalError(
+                err.response?.data?.error?.message ||
                 err.response?.data?.message ||
                 err.response?.data?.errors?.[0] ||
                 "Failed to save resource"
@@ -177,7 +178,14 @@ export default function ResourcesPage() {
         const now = new Date();
         const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-        const formatForInput = (date) => date.toISOString().slice(0, 16);
+        const formatForInput = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            const hours = String(date.getHours()).padStart(2, "0");
+            const minutes = String(date.getMinutes()).padStart(2, "0");
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
         setFromTime(formatForInput(now));
         setToTime(formatForInput(tomorrow));
         setShowAvailabilityModal(true);
@@ -218,6 +226,7 @@ export default function ResourcesPage() {
             setAvailabilityData(data);
         } catch (err) {
             setAvailabilityError(
+                err.response?.data?.error?.message ||
                 err.response?.data?.message ||
                 err.response?.data?.errors?.[0] ||
                 "Failed to check availability"
@@ -360,7 +369,7 @@ export default function ResourcesPage() {
                                 <tbody>
                                     {resources.map((res) => (
                                         <tr key={res._id}>
-                                            <td style={{ fontWeight: 600, color: "#f8fafc" }}>
+                                            <td style={{ fontWeight: 600, color: "#0f172a" }}>
                                                 {res.name}
                                             </td>
                                             <td>
@@ -378,7 +387,7 @@ export default function ResourcesPage() {
                                                     <span className="badge-inactive">Inactive</span>
                                                 )}
                                             </td>
-                                            <td style={{ color: "#94a3b8", maxWidth: "260px" }}>
+                                            <td style={{ color: "#64748b", maxWidth: "260px" }}>
                                                 {res.description || "—"}
                                             </td>
                                             <td>
@@ -568,7 +577,7 @@ export default function ResourcesPage() {
 
                             {availabilityData && (
                                 <div className="availability-results">
-                                    <h4 style={{ marginBottom: "0.8rem", color: "#f8fafc", fontSize: "0.95rem" }}>
+                                    <h4 style={{ marginBottom: "0.8rem", color: "#0f172a", fontSize: "0.95rem" }}>
                                         Overlapping Bookings ({availabilityData.bookings?.length || 0}):
                                     </h4>
 
@@ -581,10 +590,10 @@ export default function ResourcesPage() {
                                             {availabilityData.bookings.map((b, idx) => (
                                                 <div key={b._id || idx} className="booking-item">
                                                     <div>
-                                                        <div style={{ fontWeight: 600, color: "#f8fafc", fontSize: "0.88rem" }}>
+                                                        <div style={{ fontWeight: 600, color: "#0f172a", fontSize: "0.88rem" }}>
                                                             {new Date(b.startTime).toLocaleString()} → {new Date(b.endTime).toLocaleString()}
                                                         </div>
-                                                        <div style={{ color: "#94a3b8", fontSize: "0.78rem" }}>
+                                                        <div style={{ color: "#64748b", fontSize: "0.78rem" }}>
                                                             UTC: {b.startTime} to {b.endTime}
                                                         </div>
                                                     </div>

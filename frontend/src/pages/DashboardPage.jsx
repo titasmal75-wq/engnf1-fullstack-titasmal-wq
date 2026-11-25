@@ -21,6 +21,7 @@ export default function DashboardPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [ticketStats, setTicketStats] = useState(null);
 
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -98,7 +99,7 @@ export default function DashboardPage() {
             setTotalPages(data.totalPages || 1);
         } catch (err) {
             console.error("Error fetching tickets:", err);
-            setError(err.response?.data?.message || "Failed to load tickets");
+            setError(err.response?.data?.error?.message || err.response?.data?.message || "Failed to load tickets");
         } finally {
             setLoading(false);
         }
@@ -107,6 +108,14 @@ export default function DashboardPage() {
     useEffect(() => {
         fetchTickets();
     }, [fetchTickets]);
+
+    useEffect(() => {
+        ticketRestApi.getStats()
+            .then(setTicketStats)
+            .catch((err) => {
+                console.error("Error fetching ticket stats:", err);
+            });
+    }, []);
 
 
     const openTicketDetail = async (id) => {
@@ -120,7 +129,7 @@ export default function DashboardPage() {
             setEvents(data.events || []);
         } catch (err) {
             console.error("Error fetching ticket detail:", err);
-            setPatchError(err.response?.data?.message || "Failed to load ticket details");
+            setPatchError(err.response?.data?.error?.message || err.response?.data?.message || "Failed to load ticket details");
         } finally {
             setLoadingDetail(false);
         }
@@ -215,7 +224,7 @@ export default function DashboardPage() {
             setTickets(prevTicketsList);
             setEvents(prevEvents);
 
-            const serverMsg = err.response?.data?.message || err.message || "Network error";
+            const serverMsg = err.response?.data?.error?.message || err.response?.data?.message || err.message || "Network error";
             setPatchError(`⚠️ Update failed: ${serverMsg}. Reverted ${field} back to "${prevTicket[field]}".`);
         } finally {
             setSavingField(null);
@@ -260,8 +269,11 @@ export default function DashboardPage() {
                 if (!item.subject || typeof item.subject !== "string" || item.subject.trim().length < 3) {
                     throw new Error(`Validation Error on ${indexLabel}: "subject" is required and must be at least 3 characters.`);
                 }
-                if (item.subject.trim().length > 200) {
-                    throw new Error(`Validation Error on ${indexLabel}: "subject" exceeds maximum allowed length (200 characters).`);
+                if (item.subject.trim().length > 150) {
+                    throw new Error(`Validation Error on ${indexLabel}: "subject" exceeds maximum allowed length (150 characters).`);
+                }
+                if (!item.body || typeof item.body !== "string" || item.body.trim().length < 5 || item.body.trim().length > 2000) {
+                    throw new Error(`Validation Error on ${indexLabel}: "body" must be 5 to 2000 characters.`);
                 }
             }
 
@@ -270,7 +282,7 @@ export default function DashboardPage() {
             fetchTickets();
         } catch (err) {
             console.error("Import error:", err);
-            setImportError(err.response?.data?.message || err.message || "Failed to import tickets");
+            setImportError(err.response?.data?.error?.message || err.response?.data?.message || err.message || "Failed to import tickets");
         } finally {
             setImportLoading(false);
         }
@@ -308,6 +320,14 @@ export default function DashboardPage() {
                         <div className="stat-card">
                             <span className="stat-label">Total Tickets</span>
                             <span className="stat-num">{total}</span>
+                        </div>
+                        <div className="stat-card">
+                            <span className="stat-label">Reviewed</span>
+                            <span className="stat-num">{ticketStats?.reviewedCount ?? 0}</span>
+                        </div>
+                        <div className="stat-card">
+                            <span className="stat-label">Model Agreement</span>
+                            <span className="stat-num">{ticketStats?.modelAgreementRate ?? 0}%</span>
                         </div>
                     </div>
                 </div>

@@ -24,8 +24,17 @@ const DURATION_OPTIONS = [
     { label: "90 minutes (1.5 hrs)", minutes: 90 },
     { label: "120 minutes (2 hrs)", minutes: 120 },
     { label: "150 minutes (2.5 hrs)", minutes: 150 },
-    { label: "180 minutes (3 hrs max)", minutes: 180 },
+    { label: "180 minutes (3 hrs)", minutes: 180 },
+    { label: "210 minutes (3.5 hrs)", minutes: 210 },
+    { label: "240 minutes (4 hrs)", minutes: 240 },
 ];
+
+const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
 
 export default function BookingsPage() {
     const { user, logout } = useAuth();
@@ -48,7 +57,7 @@ export default function BookingsPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [createForm, setCreateForm] = useState({
         resourceId: "",
-        date: new Date().toISOString().slice(0, 10),
+        date: formatLocalDate(new Date()),
         startTime: "10:00",
         durationMinutes: 60,
         purpose: "",
@@ -123,8 +132,8 @@ export default function BookingsPage() {
             setCreateError("Please select a resource");
             return;
         }
-        const startIso = `${createForm.date}T${createForm.startTime}:00.000Z`;
-        const startDate = new Date(startIso);
+        const startDate = new Date(`${createForm.date}T${createForm.startTime}:00`);
+        const startIso = startDate.toISOString();
         const endDate = new Date(startDate.getTime() + Number(createForm.durationMinutes) * 60 * 1000);
         const endIso = endDate.toISOString();
 
@@ -148,6 +157,7 @@ export default function BookingsPage() {
             setTimeout(() => setActionSuccess(""), 4000);
         } catch (err) {
             setCreateError(
+                err.response?.data?.error?.message ||
                 err.response?.data?.message ||
                 "Failed to create booking. Please check for scheduling conflicts."
             );
@@ -168,7 +178,7 @@ export default function BookingsPage() {
             fetchBookings();
             setTimeout(() => setActionSuccess(""), 4000);
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to cancel booking");
+            setError(err.response?.data?.error?.message || err.response?.data?.message || "Failed to cancel booking");
         } finally {
             setActionLoadingId(null);
         }
@@ -184,7 +194,7 @@ export default function BookingsPage() {
             fetchBookings();
             setTimeout(() => setActionSuccess(""), 4000);
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to approve booking");
+            setError(err.response?.data?.error?.message || err.response?.data?.message || "Failed to approve booking");
         } finally {
             setActionLoadingId(null);
         }
@@ -214,7 +224,7 @@ export default function BookingsPage() {
             fetchBookings();
             setTimeout(() => setActionSuccess(""), 4000);
         } catch (err) {
-            setRejectError(err.response?.data?.message || "Failed to reject booking");
+            setRejectError(err.response?.data?.error?.message || err.response?.data?.message || "Failed to reject booking");
         } finally {
             setRejectLoading(false);
         }
@@ -268,7 +278,7 @@ export default function BookingsPage() {
 
                 <div className="filters-card">
                     <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
-                        <span style={{ fontSize: "0.85rem", color: "#94a3b8", fontWeight: 600 }}>
+                        <span style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: 600 }}>
                             Filter by Status:
                         </span>
                         <select
@@ -329,7 +339,7 @@ export default function BookingsPage() {
                                         return (
                                             <tr key={b._id}>
                                                 <td>
-                                                    <div style={{ fontWeight: 600, color: "#f8fafc" }}>{resName}</div>
+                                                    <div style={{ fontWeight: 600, color: "#0f172a" }}>{resName}</div>
                                                     {resType && (
                                                         <span className={`badge-pill type-${resType.toLowerCase()}`}>
                                                             {resType}
@@ -349,7 +359,7 @@ export default function BookingsPage() {
                                                     </div>
                                                 </td>
                                                 <td style={{ maxWidth: "260px" }}>
-                                                    <div style={{ color: "#e2e8f0" }}>{b.purpose}</div>
+                                                    <div style={{ color: "#334155" }}>{b.purpose}</div>
                                                     {b.ticketId && (
                                                         <span className="ext-badge" style={{ marginTop: "0.3rem", display: "inline-block" }}>
                                                             Ticket Linked
@@ -363,10 +373,10 @@ export default function BookingsPage() {
                                                 </td>
                                                 {activeTab === "all" && (
                                                     <td>
-                                                        <div style={{ fontSize: "0.85rem", color: "#f8fafc" }}>
+                                                        <div style={{ fontSize: "0.85rem", color: "#0f172a" }}>
                                                             {b.userId?.name || "User"}
                                                         </div>
-                                                        <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                                                        <div style={{ fontSize: "0.75rem", color: "#64748b" }}>
                                                             {b.userId?.email}
                                                         </div>
                                                     </td>
@@ -476,7 +486,8 @@ export default function BookingsPage() {
                                     <input
                                         type="date"
                                         required
-                                        min={new Date().toISOString().slice(0, 10)}
+                                        min={formatLocalDate(new Date())}
+                                        max={formatLocalDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}
                                         value={createForm.date}
                                         onChange={(e) => setCreateForm({ ...createForm, date: e.target.value })}
                                     />
@@ -484,13 +495,13 @@ export default function BookingsPage() {
 
                                 <div className="time-picker-row">
                                     <div className="form-group">
-                                        <label>Start Time (UTC) *</label>
+                                        <label>Start Time (Local) *</label>
                                         <select
                                             value={createForm.startTime}
                                             onChange={(e) => setCreateForm({ ...createForm, startTime: e.target.value })}
                                         >
                                             {TIME_OPTIONS.map((t) => (
-                                                <option key={t} value={t}>{t} UTC</option>
+                                                <option key={t} value={t}>{t} (local)</option>
                                             ))}
                                         </select>
                                         <span className="grid-helper-tip">30-min grid alignment</span>
@@ -506,7 +517,7 @@ export default function BookingsPage() {
                                                 <option key={d.minutes} value={d.minutes}>{d.label}</option>
                                             ))}
                                         </select>
-                                        <span className="grid-helper-tip">Allowed: 30 to 180 min</span>
+                                        <span className="grid-helper-tip">Allowed: 30 to 240 min</span>
                                     </div>
                                 </div>
 

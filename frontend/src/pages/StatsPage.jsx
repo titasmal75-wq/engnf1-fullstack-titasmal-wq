@@ -36,7 +36,7 @@ export default function StatsPage() {
                 }
             } catch (err) {
                 console.error("Error loading stats:", err);
-                setError(err.response?.data?.message || "Failed to load statistics");
+                setError(err.response?.data?.error?.message || err.response?.data?.message || "Failed to load statistics");
             } finally {
                 setLoading(false);
             }
@@ -163,7 +163,7 @@ export default function StatsPage() {
                         </div>
                         <div className="leaderboard-card">
                             {!adminStats.topResources || adminStats.topResources.length === 0 ? (
-                                <p style={{ color: "#94a3b8", fontStyle: "italic" }}>No facility bookings recorded yet.</p>
+                                <p style={{ color: "#64748b", fontStyle: "italic" }}>No facility bookings recorded yet.</p>
                             ) : (
                                 adminStats.topResources.map((item, idx) => (
                                     <div key={item.resourceId || idx} className="leaderboard-item">
