@@ -384,19 +384,14 @@ Ticket list filters include `status`, `category`, `priority`, `q`, `page`, and `
 
 ## 10. Known Limitations
 
-The following items should be considered when comparing the current repository with the ENGN-F1 assessment API and business-rule specification:
+The following items should be considered before using the application beyond local development or the public demo:
 
-1. **My bookings endpoint name:** the current route is `GET /api/bookings/my`. The assessment brief specifies `GET /api/bookings/mine`.
-2. **Maximum booking duration:** the booking service currently allows a duration from 30 to 180 minutes. The assessment brief allows up to 240 minutes.
-3. **Booking date window:** the current booking-time validator checks valid dates, end-after-start, and 30-minute UTC grid alignment. It does not currently enforce that the start time must be in the future and no more than 30 days ahead.
-4. **Maximum active bookings per user:** the current booking creation service does not enforce the assessment brief's limit of three future PENDING/APPROVED bookings per user.
-5. **Ticket list response shape:** the current `GET /api/tickets` response uses `tickets` and `limit`. The assessment brief's standard paginated response uses `data` and `pageSize`; adapt the response if exact contract matching is required.
-6. **Booking transaction environment:** booking creation uses `session.withTransaction()`. MongoDB transactions need a replica-set-capable MongoDB deployment. The included Compose file starts a standard MongoDB container and does not configure replica-set initialization.
-7. **Test coverage:** the current backend `npm test` script is a controller-module load smoke check, not a full automated unit, integration, or 10-request concurrency test suite.
-8. **Demo transport security:** the public demo link currently uses HTTP rather than HTTPS. Use HTTPS and production-grade secret management before handling real user data.
-9. **Seeded users:** the demo credentials are public in this README and must not be used for a production deployment.
+1. **Booking transactions in Docker Compose:** booking creation uses MongoDB transactions. Transactions require a replica-set-capable MongoDB deployment, but the included Compose file starts a standalone MongoDB container and does not configure replica-set initialization. Booking creation will need a transaction-capable MongoDB deployment.
+2. **Test coverage:** the backend `npm test` script is a controller-module load smoke check, not a full automated unit, integration, or concurrency test suite.
+3. **Demo transport security:** the public demo link currently uses HTTP rather than HTTPS. Use HTTPS and production-grade secret management before handling real user data.
+4. **Seeded users:** the demo credentials are public in this README and must not be used for a production deployment.
 
-These limitations are documented so the current implementation is not mistaken for having passed every external assessment test. They can be addressed in a later revision by aligning the route names and validation rules with the assessment contract, configuring a transaction-capable MongoDB deployment, and adding automated API/concurrency tests.
+The current implementation uses `GET /api/bookings/mine`, returns ticket-list pagination fields as `data` and `pageSize`, and enforces booking durations of 30–240 minutes, future start times no more than 30 days ahead, and a maximum of three future PENDING/APPROVED bookings per user. These implementation details do not by themselves establish that every external assessment test has passed.
 
 ---
 
