@@ -67,7 +67,7 @@ app.use("/api/admin", adminRoutes);
 
 // SPA fallback for frontend routes in production
 if (fs.existsSync(publicPath)) {
-    app.get("*", (req, res, next) => {
+    app.get("/{*splat}", (req, res, next) => {
         if (req.path.startsWith("/api")) return next();
         res.sendFile(path.join(publicPath, "index.html"));
     });
